@@ -74,7 +74,7 @@ ggplot(data = blitzSummaries, aes(x = sessions*avg_game_count, y = endElo-startE
 
 ggplot(data = blitzSummaries, aes(x = sessions, y = sessions* avg_game_count)) + geom_point()
 
-player_frequencies <- player_sessions %>% transform(frequency = if_else(count >= 300,"frequent",if_else(count<=100,"infrequent","moderate")))
+player_frequencies <- session_summaries %>% transform(frequency = if_else(sessions >= 300,"frequent",if_else(sessions<=100,"infrequent","moderate")))
 frequent_players <- player_frequencies%>% filter(frequency =="frequent")
 moderately_frequent_players <- player_frequencies%>% filter(frequency =="moderate")
 infrequent_players <- player_frequencies%>% filter(frequency =="infrequent")
@@ -101,7 +101,6 @@ ggplot(data = blitzSummaries, aes(x = sessions, y = sessions*avg_game_count)) + 
 
 #plot how long each session is for different groups
 
-
 ggplot(data = infrequent_players, aes(x = avg_length/60)) + geom_histogram(binwidth = 20) +xlim(0,250)  + labs(x = "Session Length (minutes)", title = "Play Times of Infrequent Players", subtitle = "Players with less than 100 sessions over the course of a year")
 ggplot(data = moderately_frequent_players, aes(x = avg_length/60)) + geom_histogram(binwidth = 20) +xlim(0,250)  + labs(x = "Session Length (minutes)", title = "Play Times of Moderately Frequent Players", subtitle = "Players with 100-300 sessions over the course of a year")
 ggplot(data = frequent_players, aes(x = avg_length/60)) + geom_histogram(binwidth = 20) +xlim(0,250) + labs(x = "Session Length (minutes)", title = "Play Times of Frequent Players", subtitle = "Players with over 300 sessions over the course of a year")
@@ -122,3 +121,31 @@ ggplot(data = frequent_players, aes(x = avg_length/60, y=endElo)) + geom_point()
 ggplot(data = moderately_frequent_players, aes(x = avg_length/60, y=endElo)) + geom_point() + geom_hline(yintercept = mean(moderately_frequent_players$endElo)) + ylim(1250,2000)
 ggplot(data = infrequent_players, aes(x = avg_length/60, y=endElo)) + geom_point() + geom_hline(yintercept = mean(infrequent_players$endElo)) + ylim(1250,2000)
 
+#How tight are play schedules 
+library(anytime)
+frequent_player_sessions <- player_sessions %>% filter(player %in% frequent_players$player) %>%  transform(time = hour(anytime(start)))
+
+cluster_rates <- data.frame(matrix(nrow = nrow(frequent_players), ncol = 1))
+colnames(cluster_rates) <- c("cluster_rate")
+for(i in 1:nrow(frequent_players)){
+  single_player_sessions <- frequent_player_sessions %>% filter(player == frequent_players$player[i])
+  Dbscan_cl<- dbscan(single_player_sessions$time, eps = 1, MinPts = floor(nrow(single_player_sessions)/5))
+  clusters <- as.list(Dbscan_cl[["cluster"]])
+  single_player_sessions$cluster_no <- clusters
+  cluster_rates[i,1] <- mean(clusters!=0)
+}
+ggplot(data = cluster_rates, aes(x = cluster_rate)) + geom_histogram()
+
+
+moderate_player_sessions <- player_sessions %>% filter(player %in% moderately_frequent_players$player) %>%  transform(time = hour(anytime(start)))
+
+cluster_rates2 <- data.frame(matrix(nrow = nrow(moderately_frequent_players), ncol = 1))
+colnames(cluster_rates2) <- c("cluster_rate")
+for(i in 1:nrow(moderately_frequent_players)){
+  single_player_sessions <- moderate_player_sessions %>% filter(player == moderately_frequent_players$player[i])
+  Dbscan_cl<- dbscan(single_player_sessions$time, eps = 1, MinPts = floor(nrow(single_player_sessions)/5))
+  clusters <- as.list(Dbscan_cl[["cluster"]])
+  single_player_sessions$cluster_no <- clusters
+  cluster_rates2[i,1] <- mean(clusters!=0)
+}
+ggplot(data = cluster_rates2, aes(x = cluster_rate)) + geom_histogram()
