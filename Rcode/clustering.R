@@ -1,3 +1,5 @@
+#Code by Peyton Barger
+
 library(fpc)
 library(readr)
 library(tidyverse)
@@ -118,8 +120,8 @@ ggplot(data = blitz_in_range, aes(x = avg_blitz_count, y = end_Elo_blitz-start_E
 
 
 #Change in Elo plots
-ggplot(data = blitzSummaries, aes(x = blitz_sessions, y = end_Elo_blitz-start_Elo_blitz)) + geom_point() + geom_hline(yintercept = 0)
-ggplot(data = blitzSummaries, aes(x = blitz_sessions*avg_blitz_count, y = end_Elo_blitz-start_Elo_blitz)) + geom_point() + geom_hline(yintercept = 0)
+ggplot(data = blitzSummaries, aes(x = blitz_sessions, y = end_Elo_blitz-start_Elo_blitz)) + geom_point() + geom_hline(yintercept = 0) + labs(title = "Elo Change vs Session count", y = "Change in Elo", x = "Sessions")
+ggplot(data = blitzSummaries, aes(x = blitz_sessions*avg_blitz_count, y = end_Elo_blitz-start_Elo_blitz)) + geom_point() + geom_hline(yintercept = 0) + labs(title = "Elo Change vs Games Played",y = "Change in Elo", x = "Games Played") + geom_smooth(method = "lm")
 ggplot(data = blitzSummaries, aes(x = blitz_sessions, y = blitz_sessions* avg_blitz_count)) + geom_point()
 
 player_frequencies <- session_summaries %>% transform(frequency = if_else(sessions >= 300,"frequent",if_else(sessions<=100,"infrequent","moderate")))
@@ -145,7 +147,7 @@ quantile(frequent_players$avg_game_count, .5)
 mean(frequent_players$avg_game_count)
 
 
-ggplot(data = blitzSummaries, aes(x = sessions, y = sessions*avg_game_count)) + geom_point() + geom_hline(yintercept = 0)
+ggplot(data = blitzSummaries, aes(x = blitz_sessions, y = blitz_sessions*avg_blitz_count)) + geom_point() + geom_hline(yintercept = 0)
 
 #plot how long each session is for different groups
 
@@ -165,10 +167,6 @@ for(i in 1:10){
   ggsave(filename = paste0("plot", i, ".png"), width = 1600, height = 1200, units = "px", path = ("animation2"))
 }
 
-ggplot(data = frequent_players, aes(x = avg_length/60, y=endElo)) + geom_point() + geom_hline(yintercept = mean(frequent_players$endElo)) + ylim(1250,2000)
-ggplot(data = moderately_frequent_players, aes(x = avg_length/60, y=endElo)) + geom_point() + geom_hline(yintercept = mean(moderately_frequent_players$endElo)) + ylim(1250,2000)
-ggplot(data = infrequent_players, aes(x = avg_length/60, y=endElo)) + geom_point() + geom_hline(yintercept = mean(infrequent_players$endElo)) + ylim(1250,2000)
-
 #How tight are play schedules 
 library(anytime)
 frequent_player_sessions <- player_sessions %>% filter(player %in% frequent_players$player) %>%  transform(time = hour(anytime(start)))
@@ -183,7 +181,7 @@ for(i in 1:nrow(frequent_players)){
   cluster_rates[i,1] <- mean(clusters!=0)
   cluster_rates[i,2] <- frequent_players$player[i]
 }
-ggplot(data = cluster_rates, aes(x = cluster_rate)) + geom_histogram() + labs(title = "Cluster rates of highly active players")
+ggplot(data = cluster_rates, aes(x = cluster_rate)) + geom_histogram(binwidth = .1) + labs(title = "Rates Active Players Start Sessions at Their Frequent Times", subtitle = "Sessions clustered by time of day around where 1/5 of their sessions start")+ geom_vline(xintercept = median(cluster_rates$cluster_rate), color = "red")
 
 cluster_rates <- data.frame(matrix(nrow = nrow(frequent_players), ncol = 2))
 colnames(cluster_rates) <- c("cluster_rate", "player")
@@ -208,7 +206,7 @@ for(i in 1:nrow(moderately_frequent_players)){
   cluster_rates2[i,2] <- moderately_frequent_players$player[i]
   cluster_rates2[i,1] <- mean(clusters!=0)
 }
-ggplot(data = cluster_rates2, aes(x = cluster_rate)) + geom_histogram()+ labs(title = "Cluster rates of moderately active players")
+ggplot(data = cluster_rates2, aes(x = cluster_rate)) + geom_histogram(binwidth = .1)+ labs(title = "Rates Moderately Active Players Start Sessions at Their Frequent Times", subtitle = "Sessions clustered by time of day around where 1/5 of their sessions start") + geom_vline(xintercept = median(cluster_rates2$cluster_rate), color = "red")
 
 all_player_sessions <- player_sessions %>%  transform(time = hour(anytime(start)))
 cluster_rates3 <- data.frame(matrix(nrow = nrow(player_sample), ncol = 2))
@@ -272,7 +270,7 @@ for(i in 1:length(hiatus_players)){
   hiatus_diffs <- rbind(hiatus_diffs, single_player_group)
 }
 
-ggplot(data = hiatus_diffs, aes(x = diff)) + geom_histogram(binwidth = 50)  + xlim(-500,500) + geom_vline(xintercept = quantile(hiatus_diffs$diff, probs = .5), color = "red")
+ggplot(data = hiatus_diffs, aes(x = diff)) + geom_histogram(binwidth = 50)  + xlim(-500,500) + geom_vline(xintercept = quantile(hiatus_diffs$diff, probs = .5), color = "red") + labs(title = "Change in Elo after a hiatus", subtitle = "Two or more months without playing", x = "Change in Elo")
 ggplot(data = hiatus_diffs, aes(x = diff, y = blitzElo)) + geom_point() 
 
 ggplot(data = blitzSummaries, aes(x = end_Elo_blitz)) + geom_histogram()+ geom_vline(xintercept = quantile(blitzSummaries$end_Elo_blitz, probs = .5), color = "red")

@@ -1,10 +1,12 @@
+#Code by Peyton Barger
+
 library(readr)
 library(tidyverse)
 library(dplyr)
-players <- read_csv("RStudio/Chess/players.csv")
-player_games <- read_csv("RStudio/Chess/player_games.csv")
-Jan_2013 <- read_csv("RStudio/Chess/2013_Jan.csv")
-x2013 <- read_csv("RStudio/Chess/jan_2013-jan_2014.csv")
+players <- read_csv("players.csv")
+player_games <- read_csv("player_games.csv")
+Jan_2013 <- read_csv("2013_Jan.csv")
+x2013 <- read_csv("jan_2013-jan_2014.csv")
 
 #count the number of games each player has played
 games <- player_games %>% 

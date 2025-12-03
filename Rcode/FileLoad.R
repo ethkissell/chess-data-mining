@@ -1,3 +1,5 @@
+#Code by Peyton Barger
+
 library(readr)
 jan_2013 <- read_csv("RStudio/Chess/2013_Jan.csv")
 feb_2013 <- read_csv("RStudio/Chess/2013_Feb.csv")

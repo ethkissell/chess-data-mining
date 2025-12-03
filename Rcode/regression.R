@@ -1,5 +1,9 @@
 #Load data
 library(readr)
+library(fpc)
+library(readr)
+library(tidyverse)
+library(dplyr)
   #Data from clustering.R
 player_summaries <- read_csv("player_summaries_clustering.csv")
 players <- unique(player_summaries$player)
@@ -59,7 +63,7 @@ sqrt(five_cv$delta[1])
 
 useable_cols <- player_summaries %>% 
   transform(improvement = if_else(end_Elo_blitz-start_Elo_blitz > 100, 1, 0))%>%
-  select(-end_Elo_bullet, -end_Elo_blitz, -end_Elo_classical, -player, -1)
+  dplyr::select(-end_Elo_bullet, -end_Elo_blitz, -end_Elo_classical, -player, -1)
 rows <- sample(nrow(useable_cols), floor(nrow(useable_cols)*.8))
 training <- useable_cols[rows,]
 testing <- useable_cols[-rows,]
@@ -71,13 +75,15 @@ step_model <- stepAIC(logistic_model, direction = "both", trace = FALSE)
 summary(step_model)
 
 predictions <- testing %>% transform(improvement_prob = predict(logistic_model, newdata = testing, type='response')) %>%
-                           transform(improvement_pred = if_else(improvement_prob>0.1,1,0)) %>%
+                           transform(improvement_pred = if_else(improvement_prob>0.11,1,0)) %>%
                            transform(correct = improvement_pred == improvement)
 CER <- 1-mean(predictions$correct)
 
 #create confusion matrix
-table(predictions$improvement,predictions$improvement_pred)
-
+conf <- table(predictions$improvement,predictions$improvement_pred)
+conf
+conf[2,2]/(conf[2,1]+conf[2,2])
+conf[1,2]/(conf[1,2]+conf[1,1])
 
 library(ROCR)
 
@@ -85,7 +91,7 @@ pred <- prediction(predictions=predictions$improvement_prob,
                    labels=predictions$improvement)
 #plot TPR vs. FPR curve
 perf3 <- performance(pred,measure='tpr',x.measure='fpr')
-plot(perf3,colorize=TRUE,lwd=2)
+plot(perf3,colorize=TRUE,lwd=2, main = "Results of Logistic Model predicting Improvement In Players")
 abline(a=0,b=1)
 
 #plot CER curve
